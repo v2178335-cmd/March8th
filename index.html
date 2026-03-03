@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>404 — Страница не найдена</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❖</text></svg>">
+<style>
+  :root {
+    --bg-color: #0d0d0d;
+    --term-bg: #151515;
+    --term-red: #ff5f56;
+    --text-gray: #bfbdbd;
+    --glow-red: 0 0 10px rgba(204, 53, 75, 0.7), 0 0 20px rgba(204, 53, 75, 0.3);
+    --glow-white: 0 0 8px rgba(255, 255, 255, 0.5);
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    height: 100%;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-gray);
+    font-family: "Consolas", "Courier New", monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .terminal-container {
+    background-color: var(--term-bg);
+    border-radius: 12px;
+    box-shadow: 0 0 50px rgba(0,0,0,1);
+    border: 1px solid rgba(255,255,255,0.05);
+    width: 90vw;
+    max-width: 600px;
+    min-height: 300px;
+    padding: 25px;
+    position: relative;
+    text-align: center; /* Центрируем содержимое */
+  }
+  .terminal-container::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.15) 50%),
+      linear-gradient(90deg, rgba(255,0,0,0.05), rgba(0,255,0,0.02), rgba(0,0,255,0.05));
+    background-size: 100% 4px, 4px 100%;
+    animation: flicker 0.15s infinite;
+    z-index: 1;
+    border-radius: 12px;
+  }
+  @keyframes flicker {
+    0%, 100% {opacity: 0.9;}
+    50% {opacity: 1;}
+  }
+  .terminal-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .terminal-body {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    min-height: 160px;
+    font-size: 1rem;
+    text-shadow: var(--glow-white);
+  }
+  .shell-prompt {
+    color: var(--term-red);
+    font-weight: bold;
+    text-shadow: var(--glow-red);
+  }
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 15px;
+    background: var(--term-green);
+    box-shadow: var(--glow-green);
+    margin-left: 5px;
+    animation: blink 0.8s infinite;
+    vertical-align: middle;
+  }
+  @keyframes blink {
+    0%, 100% {opacity: 0;}
+    50% {opacity: 1;}
+  }
+  .btn-home {
+    align-items: center;
+    margin-top: 25px;
+    display: block; /* Меняем на блочный элемент */
+    margin-left: auto; /* Центрируем по горизонтали */
+    margin-right: auto; /* Центрируем по горизонтали */
+    background-color: var(--term-red);
+    color: #000;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 10px 25px;
+    border-radius: 25px;
+    box-shadow: 0 0 10px var(--term-red);
+    transition: background-color 0.3s ease;
+  }
+  
+</style>
+</head>
+<body>
+  <div class="terminal-container" role="main" aria-label="Сообщение о ошибке 404">
+    <div class="terminal-header" aria-hidden="true">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+    </div>
+    <div class="terminal-body" id="terminal-body" aria-live="polite"><span class="shell-prompt">Ошибка 404: </span><span id="terminal-text"></span><span class="cursor"></span></div>
+    <a href="" class="btn-home" tabindex="0">Повторить попытку</a>
+  </div>
+
+  <script>
+    const terminalText = document.getElementById('terminal-text');
+    const cursor = document.querySelector('.cursor');
+    const messages = [
+    "Упс..",
+    "\nСтраница не найдена.",
+    "Похоже, здесь ничего нет.",
+    "Возможно, наш сервер ушел..."
+	];
+
+
+    async function typeMessages(lines, element) {
+      for (const line of lines) {
+        await typeLine(line, element);
+        await pause(700);
+        element.innerHTML += '\n';
+      }
+      cursor.style.display = 'none';
+    }
+
+    async function typeLine(text, element) {
+      for (let i = 0; i < text.length; i++) {
+        element.textContent += text[i];
+        await pause(50);
+      }
+    }
+    
+    async function startTerminal() {
+      document.getElementById('alert-box').style.display = 'none';
+      const termWrap = document.getElementById('terminal-wrapper');
+      termWrap.style.display = 'flex';
+
+      for (let step of termScript) {
+        const block = document.createElement('div');
+        block.style.marginBottom = '15px';
+        
+        if (step.t === 'bar') {
+          block.innerHTML = `<span class="log-info"></span>`;
+          terminalBody.appendChild(block);
+          const logSpan = block.querySelector('.log-info');
+          
+          const barLength = 16;
+          for (let i = 0; i <= 100; i += 2) {
+            const filledLen = Math.round((barLength * i) / 100);
+            const emptyLen = barLength - filledLen;
+            const bar = '▮'.repeat(filledLen) + '▯'.repeat(emptyLen);
+            
+            logSpan.innerText = `${step.txt} [${bar}] ${i}%`;
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+            await new Promise(r => setTimeout(r, 50));
+          }
+        }
+      }
+    }
+
+    function pause(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+	
+    window.onload = () => typeMessages(messages, terminalText);
+  </script>
+</body>
+</html>

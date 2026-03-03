@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Новое уведомление</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✉️</text></svg>">
+    
+    <style>
+        :root {
+            --bg-dark: #0f1621;
+            --tg-blue: #3390ec;
+            --term-bg: #151515;
+            --term-green: #35cc4b;
+            --accent-pink: #ff4d6d;
+            --glow-green: 0 0 10px rgba(53, 204, 75, 0.7), 0 0 20px rgba(53, 204, 75, 0.3);
+            --glow-white: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100dvh;
+            background-color: var(--bg-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            color: white; overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- ЭКРАН 1: УВЕДОМЛЕНИЕ И ЛОАДЕР --- */
+        #alert-box {
+            background-color: #1c242f;
+            width: 85%; max-width: 300px;
+            padding: 25px; border-radius: 15px;
+            text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            z-index: 10; transition: all 0.5s ease;
+        }
+        .icon-msg { font-size: 50px; margin-bottom: 15px; }
+        .btn-main {
+            background-color: var(--tg-blue);
+            color: white; border: none; padding: 12px 0;
+            border-radius: 10px; font-weight: 600; cursor: pointer;
+            width: 100%; font-size: 16px; outline: none;
+        }
+        #loader {
+            display: none; width: 100%; height: 4px;
+            background: #2c394a; border-radius: 10px;
+            margin: 20px 0 10px; overflow: hidden;
+        }
+        #progress { width: 0%; height: 100%; background: var(--tg-blue); transition: width 0.1s linear; }
+        #status-text { display: none; font-size: 16px; color: #7f91a4; margin-top: 5px; }
+
+        /* --- ЭКРАН 2: ТЕРМИНАЛ (ИЗ ОРИГИНАЛА) --- */
+        #terminal-wrapper {
+            display: none; width: 95%; max-width: 700px;
+            height: 75vh; background-color: var(--term-bg);
+            border-radius: 12px; flex-direction: column;
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative; overflow: hidden;
+        }
+        /* CRT Эффект */
+        #terminal-wrapper::before {
+            content: " "; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
+            background-size: 100% 4px, 4px 100%; z-index: 10; pointer-events: none;
+        }
+        .term-header {
+            height: 35px; background: #2a2a2a;
+            display: flex; align-items: center; padding: 0 15px; gap: 8px;
+            border-bottom: 1px solid #333;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .term-content {
+            flex: 1; padding: 25px; color: #fff;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px; overflow-y: auto; line-height: 1.6;
+            text-shadow: var(--glow-white);
+			white-space: pre-wrap;
+        }
+        .shell-prompt { color: var(--term-green); font-weight: bold; text-shadow: var(--glow-green); }
+        .log-info { color: #bfbdbd; text-shadow: 0 0 2px rgba(255,255,255,0.2); }
+        .cursor { display: inline-block; width: 8px; height: 15px; background: var(--term-green); box-shadow: var(--glow-green); margin-left: 5px; animation: blink 0.8s infinite; }
+
+        /* --- ЭКРАН 3: ФИНАЛ --- */
+        #final-screen {
+            display: none; text-align: center; padding: 20px; z-index: 20;
+            animation: appear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .wish-title { font-size: 28px; color: #ff8fa3; font-weight: bold; margin-bottom: 15px; }
+        .wish-sub { font-size: 18px; color: white; line-height: 1.6; max-width: 400px; }
+
+        /* Элементы декора */
+        #particles { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 15; }
+        .petal { position: absolute; background: #ffc0cb; border-radius: 150% 0 150% 0; animation: falling linear infinite; }
+		
+		.btn-retry {
+			margin-top: 20px;
+			padding: 10px 25px;
+			border: none;
+			background: var(--accent-pink);
+			color: white;
+			border-radius: 50px;
+			cursor: pointer;
+			font-weight: bold;
+			box-shadow: 0 5px 15px rgba(255, 77, 109, 0.4);
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+        @keyframes appear { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes falling { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; } 10% { opacity: 0.8; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0.2; } }
+    </style>
+</head>
+<body>
+
+    <div id="particles"></div>
+
+    <!-- ШАГ 1: УВЕДОМЛЕНИЕ -->
+    <div id="alert-box">
+        <div id="alert-content">
+            <div class="icon-msg">✉️</div>
+            <div style="font-size: 19px; font-weight: 600; margin-bottom: 10px;">Личное уведомление</div>
+            <div style="font-size: 16px; color: #7f91a4; margin-bottom: 25px;">Нажмите «Открыть», чтобы прочитать.</div>
+            <button class="btn-main" onclick="startLoading()">ОТКРЫТЬ</button>
+        </div>
+
+        <!-- ШАГ 2: ЛОАДЕР -->
+        <div id="loader"><div id="progress"></div></div>
+        <div id="status-text">Инициализация...</div>
+    </div>
+
+    <!-- ШАГ 3: ТЕРМИНАЛ -->
+    <div id="terminal-wrapper">
+        <div class="term-header">
+            <div class="dot" style="background: #ff5f56;"></div>
+            <div class="dot" style="background: #ffbd2e;"></div>
+            <div class="dot" style="background: #27c93f;"></div>
+        </div>
+        <div class="term-content" id="terminal-body"></div>
+    </div>
+
+    <!-- ШАГ 4: ФИНАЛ -->
+    <div id="final-screen">
+        <span id="wish-emojis" style="font-size: 70px; margin-bottom: 20px; display: block;">🌸✨🌷</span>
+        <div class="wish-title" id="wish-title">С 8 Марта!</div>
+        <div class="wish-sub" id="wish-text"></div>
+        <button class="btn-retry" style="margin-top: 30px; width: auto; padding: 10px 30px;" onclick="location.reload()">ПОВТОРИТЬ</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+    <script>
+        const terminalBody = document.getElementById('terminal-body');
+        
+        const greetings = [
+            { title: "С 8 Марта!", text: "Я решил собрать эту маленькую цифровую открытку специально для тебя. Пусть эта весна принесет только самые добрые моменты!" },
+            { title: "Самой чудесной!", text: "Пусть эта весна подарит тебе столько радости, сколько строк кода в этой программе. Улыбайся чаще, тебе это очень идет!" },
+            { title: "Сияй!", text: "Ты — главное украшение этой весны. Пусть она будет для тебя по-настоящему особенной, волшебной и незабываемой!" },
+            { title: "С праздником!", text: "Пусть твоя весна будет такой же яркой и тёплой, как твоя улыбка. Спасибо, что украшаешь этот мир своим присутствием!" }
+        ];
+
+        const emojiSets = ["🌸✨🌷", "💐⭐🌺", "🌹✨💖", "🌷🦋🌸", "🌺✨🌸"];
+
+       const termScript = [
+			{ t: 'cmd', txt: 'whoami' },
+			{ t: 'log', txt: ['> Пользователь:', 'Самая Очаровательная Девушка', '> Статус: Главная причина весны'] },
+			{ t: 'cmd', txt: 'finger --status happiness' },
+			{ t: 'log', txt: ['> Настроение: Загрузка...'] },
+			{ t: 'bar', txt:''},
+			{ t: 'cmd', txt: 'ssh spring_admin@localhost' },
+			{ t: 'log', txt: ['> Подключение... Ок.', '> Доступ к ядру "8 марта" открыт.'] },
+			{ t: 'cmd', txt: './search_beauty.sh' },
+			{ t: 'log', txt: ['> Объект найден в текущей сессии.', '> Анализ красоты...']},
+			{ t: 'bar', txt:''},
+			{ t: 'log', txt: ['[ВНИМАНИЕ: Значение превышено]']},
+			{ t: 'cmd', txt: 'sudo run congratulation.exe' },
+			{ t: 'log', txt: ['> Инициализация праздничного режима...', '> Снятие всех ограничений...', '> Готово к выводу.' ]}
+		];
+
+        function startLoading() {
+            document.getElementById('alert-content').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            const statusText = document.getElementById('status-text');
+            statusText.style.display = 'block';
+
+            let width = 0;
+            const progress = document.getElementById('progress');
+            const stages = ["Анализ погоды...", "Сборка букетов...", "Генерация улыбок...", "ВЗЛОМ СИСТЕМЫ..."];
+
+            const interval = setInterval(() => {
+                width += 2;
+                progress.style.width = width + '%';
+                if (width == 20) statusText.innerText = stages[0];
+                if (width == 40) statusText.innerText = stages[1];
+                if (width == 60) statusText.innerText = stages[2];
+                if (width == 80) statusText.innerText = stages[3];
+
+                if (width >= 100) {
+                    clearInterval(interval);
+                    startTerminal();
+                }
+            }, 90);
+        }
+		
+		async function startTerminal() {
+			document.getElementById('alert-box').style.display = 'none';
+			const termWrap = document.getElementById('terminal-wrapper');
+			termWrap.style.display = 'flex';
+
+			for (let step of termScript) {
+				const block = document.createElement('div');
+				block.style.marginBottom = '15px';
+				
+				if (step.t === 'cmd') {
+					block.innerHTML = `<span class="shell-prompt">root@dff:~$ </span><span class="txt"></span><span class="cursor"></span>`;
+					terminalBody.appendChild(block);
+					const txtSpan = block.querySelector('.txt');
+					const cursor = block.querySelector('.cursor');
+					await typeWriter(step.txt, txtSpan);
+					cursor.remove();
+				} 
+
+				else if (step.t === 'bar') {
+					block.innerHTML = `<span class="log-info"></span>`;
+					terminalBody.appendChild(block);
+					const logSpan = block.querySelector('.log-info');
+					
+					const barLength = 16;
+					for (let i = 0; i <= 100; i += 2) {
+						const filledLen = Math.round((barLength * i) / 100);
+						const emptyLen = barLength - filledLen;
+						const bar = '▮'.repeat(filledLen) + '▯'.repeat(emptyLen);
+						
+						logSpan.innerText = `${step.txt} [${bar}] ${i}%`;
+						terminalBody.scrollTop = terminalBody.scrollHeight;
+						await new Promise(r => setTimeout(r, 50));
+					}
+					
+					await new Promise(r => setTimeout(r, 500));
+				}
+				
+				else {
+					block.innerHTML = `<span class="log-info"></span>`;
+					terminalBody.appendChild(block);
+					const logSpan = block.querySelector('.log-info');
+					
+					if (Array.isArray(step.txt)) {
+						for (let line of step.txt) {
+							logSpan.innerHTML += line + "<br>"; 
+							terminalBody.scrollTop = terminalBody.scrollHeight;
+							await new Promise(r => setTimeout(r, 800)); 
+						}
+					}
+					
+					else {
+						logSpan.innerText = step.txt;
+						await new Promise(r => setTimeout(r, 1000));
+					}
+				}
+				terminalBody.scrollTop = terminalBody.scrollHeight;
+			}
+
+			setTimeout(showFinal, 2000);
+		}
+
+        async function typeWriter(text, element) {
+            for (let i = 0; i < text.length; i++) {
+                element.textContent += text.charAt(i);
+                await new Promise(r => setTimeout(r, 50));
+            }
+        }
+
+        function showFinal() {
+            document.getElementById('terminal-wrapper').style.display = 'none';
+            document.body.style.background = 'radial-gradient(circle, #2b1321 0%, #0f1621 100%)';
+            
+            const randomGreet = greetings[Math.floor(Math.random() * greetings.length)];
+            document.getElementById('wish-title').innerText = randomGreet.title;
+            document.getElementById('wish-text').innerHTML = randomGreet.text;
+            document.getElementById('wish-emojis').innerText = emojiSets[Math.floor(Math.random() * emojiSets.length)];
+
+            document.getElementById('final-screen').style.display = 'block';
+            
+            createPetals();
+            confetti({
+                particleCount: 150, spread: 70, origin: { y: 0.6 },
+                colors: ['#ff8fa3', '#3390ec', '#ffffff']
+            });
+        }
+
+        function createPetals() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 40; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                petal.style.left = Math.random() * 100 + '%';
+                petal.style.width = Math.random() * 12 + 8 + 'px';
+                petal.style.height = petal.style.width;
+                petal.style.animationDuration = Math.random() * 4 + 3 + 's';
+                petal.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(petal);
+            }
+        }
+    </script>
+</body>
+</html>
