@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✉️</text></svg>">
+    
+    <title>Новое уведомление</title>
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            background-color: #0f1621;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #alert-box {
+            background-color: #1c242f;
+            width: 85%;
+            max-width: 300px;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+
+        .icon { font-size: 50px; margin-bottom: 15px; }
+        .title { font-size: 19px; font-weight: 600; margin-bottom: 10px; }
+        .text { font-size: 15px; color: #7f91a4; margin-bottom: 25px; line-height: 1.5; }
+
+        .btn {
+            background-color: #3390ec;
+            color: white;
+            border: none;
+            padding: 12px 0;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .btn:active { background-color: #2b79c7; }
+
+        #loader {
+            display: none;
+            width: 100%;
+            height: 4px;
+            background: #2c394a;
+            border-radius: 10px;
+            margin: 20px 0 10px 0;
+            overflow: hidden;
+        }
+
+        #progress {
+            width: 0%;
+            height: 100%;
+            background: #3390ec;
+            transition: width 0.1s linear;
+        }
+
+        #status-text { display: none; font-size: 13px; color: #7f91a4; margin-top: 5px; }
+
+        #final-screen {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            animation: appear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes appear {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .flowers { font-size: 70px; margin-bottom: 20px; display: block; }
+        .wish { font-size: 26px; color: #ff8fa3; font-weight: bold; margin-bottom: 15px; }
+        .sub-wish { font-size: 17px; color: #ffffff; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <div id="alert-box">
+        <div id="alert-content">
+            <div class="icon">✉️</div>
+            <div class="title">Личное уведомление</div>
+            <div class="text">
+                Нажмите «Открыть», чтобы прочитать.
+            </div>
+            <button class="btn" onclick="startFix()">ОТКРЫТЬ</button>
+        </div>
+
+        <div id="loader"><div id="progress"></div></div>
+        <div id="status-text">Загрузка...</div>
+    </div>
+
+    <div id="final-screen">
+        <span class="flowers" id="wish-emojis">🌸✨🌷</span>
+        <div class="wish" id="wish-title">С 8 Марта!</div>
+        <div class="sub-wish" id="wish-text"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+    <script>
+        const greetings = [
+            {
+                title: "С праздником весны!",
+                text: "Желаю море цветов, весенней легкости в душе и самых добрых улыбок вокруг. Пусть этот день будет по-настоящему особенным и радостным!"
+            },
+            {
+                title: "Самых добрых слов!",
+                text: "Пусть каждый весенний день дарит только хорошие новости, а весна вдохновляет на что-то чудесное. Здоровья, гармонии и любви!"
+            },
+            {
+                title: "С прекрасным днем!",
+                text: "Желаю бесконечной радости, весеннего тепла и море цветов. Пусть сбываются все самые заветные мечты! <br><br> С праздником!"
+            },
+            {
+                title: "С праздником!",
+                text: "Пусть эта весна будет полна ярких красок, искренних улыбок и солнечного света. Оставайтесь всегда такой же замечательной!"
+            }
+        ];
+
+        const emojiSets = [
+            "🌸✨🌷", "💐🌺💖", "🌹✨🦋", "🌷🌼🌸", "🌺🌷💐"
+        ];
+
+        function startFix() {
+            const randomGreet = greetings[Math.floor(Math.random() * greetings.length)];
+            document.getElementById('wish-title').innerText = randomGreet.title;
+            document.getElementById('wish-text').innerHTML = randomGreet.text;
+
+            const randomEmojis = emojiSets[Math.floor(Math.random() * emojiSets.length)];
+            document.getElementById('wish-emojis').innerText = randomEmojis;
+
+            document.getElementById('alert-content').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            const statusText = document.getElementById('status-text');
+            statusText.style.display = 'block';
+
+            let width = 0;
+            const progress = document.getElementById('progress');
+            
+            const stages = [
+                "Загрузка солнечных лучей...",
+                "Сборка лучших пожеланий...",
+                "Настройка праздничного настроения...",
+                "Почти готово..."
+            ];
+
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    showFinal();
+                } else {
+                    width += 2;
+                    progress.style.width = width + '%';
+                    if (width == 20) statusText.innerText = stages[0];
+                    if (width == 45) statusText.innerText = stages[1];
+                    if (width == 70) statusText.innerText = stages[2];
+                    if (width == 90) statusText.innerText = stages[3];
+                }
+            }, 50);
+        }
+
+        function showFinal() {
+            document.getElementById('alert-box').style.display = 'none';
+            document.body.style.background = 'radial-gradient(circle, #2b1321 0%, #0f1621 100%)';
+            document.getElementById('final-screen').style.display = 'block';
+            
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ff8fa3', '#3390ec', '#ffffff']
+            });
+        }
+    </script>
+</body>
+</html>
